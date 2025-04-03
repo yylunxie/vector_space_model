@@ -1,3 +1,11 @@
+# Vector Space Model
+
+## Model
+
+We use BM25 here.
+
+## Execute
+
 To execute, run this
 
 ```bash

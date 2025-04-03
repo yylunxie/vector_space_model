@@ -1,6 +1,5 @@
 import argparse
 import numpy as np
-import os
 import csv
 import jieba
 import xml.etree.ElementTree as ET
