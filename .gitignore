@@ -6,3 +6,4 @@ queries/
 *.pyc
 __pycache__
 *.zip
+output/
