@@ -1,0 +1,8 @@
+CIRB010/
+model/
+queries/
+*.csv
+*.pdf
+*.pyc
+__pycache__
+*.zip
