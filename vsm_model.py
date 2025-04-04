@@ -27,6 +27,7 @@ class VSM:
         self.saved_term_to_idx = os.path.join(model_dir, "term_to_idx.pkl")
         self.saved_idf_vector = os.path.join(model_dir, "idf.npy")
         self.saved_doc_term_freq = os.path.join(model_dir, "doc_term_freq.pkl")
+        self.saved_doc_lens = os.path.join(model_dir, "doc_lens.npy")
         
         #Validation model files
         if not os.path.exists(self.inverted_file):
@@ -39,12 +40,14 @@ class VSM:
         if not os.path.exists(self.saved_file_list) or \
             not os.path.exists(self.saved_term_to_idx) or \
             not os.path.exists(self.saved_idf_vector) or \
-            not os.path.exists(self.saved_doc_term_freq):
+            not os.path.exists(self.saved_doc_term_freq) or \
+            not os.path.exists(self.saved_doc_lens):
                 print("Generating files...")
                 self.doc_list, \
                 self.term_to_idx, \
                 self.idf, \
-                self.doc_term_freq = self._load_model()
+                self.doc_term_freq, \
+                self.doc_lens = self._load_model()
                 print("Done!")
         else:
             print("Loading files....")
@@ -52,6 +55,7 @@ class VSM:
             self.term_to_idx = self._load_pickle(self.saved_term_to_idx)
             self.idf = self._load_npy(self.saved_idf_vector)
             self.doc_term_freq = self._load_pickle(self.saved_doc_term_freq)
+            self.doc_lens = self._load_npy(self.saved_doc_lens)
             print("Done!")
             
         self._initialized = True
@@ -138,11 +142,14 @@ class VSM:
         df = np.array((tf_csr > 0).sum(axis=0)).flatten()
         
         idf_vector = np.log((doc_count - df + 0.5) / (df + 0.5) + 1)
+        doc_lens = np.array([sum(doc.values()) for doc in doc_term_freq])
+        np.save(self.saved_doc_lens, doc_lens)
+        
         np.save(self.saved_idf_vector, idf_vector)
         with open(self.saved_doc_term_freq, "wb") as f:
             pickle.dump(doc_term_freq, f)
         
-        return doc_list, term_to_idx, idf_vector, doc_term_freq
+        return doc_list, term_to_idx, idf_vector, doc_term_freq, doc_lens
 
 if __name__ == "__main__":
     vsm = VSM("model")
