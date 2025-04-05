@@ -29,13 +29,6 @@ class VSM:
         self.saved_doc_term_freq = os.path.join(model_dir, "doc_term_freq.pkl")
         self.saved_doc_lens = os.path.join(model_dir, "doc_lens.npy")
         
-        #Validation model files
-        if not os.path.exists(self.inverted_file):
-            raise ValueError(f"Inverted file 不存在，請檢查文件路徑是否在 {self.inverted_file}")
-        if not os.path.exists(self.vocab_file):
-            raise ValueError(f"Vocab file 不存在，請檢查文件路徑是否在 {self.vocab_file}")
-        if not os.path.exists(self.file_list):
-            raise ValueError(f"File list 不存在，請檢查文件路徑是否在 {self.file_list}")
         
         if not os.path.exists(self.saved_file_list) or \
             not os.path.exists(self.saved_term_to_idx) or \

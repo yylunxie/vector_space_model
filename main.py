@@ -69,7 +69,6 @@ def write_ranking_output(output_path, query_term_ids, vsm, use_feedback=False):
         writer = csv.writer(f)
         writer.writerow(["query_id", "retrieved_docs"])
         for qid, term_ids in query_term_ids.items():
-            
             if use_feedback:
                 term_ids = apply_rocchio_feedback(term_ids, vsm, top_k=10)
             print(f"[DEBUG] QID: {qid}, term_ids: {len(term_ids)}")
