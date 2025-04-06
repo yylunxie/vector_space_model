@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import csv
-import jieba
+import re
 import xml.etree.ElementTree as ET
 from vsm_model import VSM
 from collections import defaultdict
@@ -22,7 +22,7 @@ def apply_rocchio_feedback(term_ids, vsm, top_k=10, alpha=1.0, beta=0.75):
         List[int]: 根據 Rocchio 調整後的加權查詢 term_ids
     """
     # Step 1: 原查詢跑一次 BM25
-    initial_scores = compute_bm25(term_ids, vsm.doc_term_freq, vsm.idf, vsm.doc_lens, top_k=top_k)
+    initial_scores = compute_bm25(term_ids, vsm.posting_list, vsm.idf, vsm.doc_lens, top_k=top_k)
     
     # Step 2: 取前 top_k 篇 pseudo relevant documents
     pseudo_docs = [doc_id for doc_id, _ in initial_scores[:top_k]]
@@ -49,7 +49,7 @@ def apply_rocchio_feedback(term_ids, vsm, top_k=10, alpha=1.0, beta=0.75):
 
     # Step 6: 過濾成 term_ids（這裡你可以加門檻條件）
     final_term_ids = [tid for tid, weight in sorted(new_q_vec.items(), key=lambda x: -x[1]) if weight > 0]
-    MAX_TERMS = 300
+    MAX_TERMS = 200
     final_term_ids = final_term_ids[:MAX_TERMS]
     
     return final_term_ids
@@ -72,7 +72,7 @@ def write_ranking_output(output_path, query_term_ids, vsm, use_feedback=False):
             if use_feedback:
                 term_ids = apply_rocchio_feedback(term_ids, vsm, top_k=10)
             print(f"[DEBUG] QID: {qid}, term_ids: {len(term_ids)}")
-            ranked = compute_bm25(term_ids, vsm.doc_term_freq, vsm.idf, vsm.doc_lens, top_k=100)
+            ranked = compute_bm25(term_ids, vsm.posting_list, vsm.idf, vsm.doc_lens, top_k=100)
             doc_ids = [vsm.doc_list[doc_id].split("/")[-1].lower() for doc_id, _ in ranked]
             writer.writerow([qid, " ".join(doc_ids)])
 
@@ -87,30 +87,29 @@ def preprocess_queries_with_unigram_bigram(query_path, term_to_idx):
     for topic in root.findall("topic"):
         qid = topic.find("number").text.strip()[-3:]
         concept_text = topic.find("concepts").text.strip()
-        tokens = jieba.lcut(concept_text)
+        
+        concept_text = re.sub(r"[^\u4e00-\u9fff]", "", concept_text)
 
+        chars = list(concept_text)
         term_ids = []
 
         # 加入 unigram
-        for token in tokens:
-            if token in term_to_idx:
-                term_ids.append(term_to_idx[token])
+        for ch in chars:
+            if ch in term_to_idx:
+                term_ids.append(term_to_idx[ch])
 
         # 加入 bigram
-        for i in range(len(tokens) - 1):
-            bigram = tokens[i] + tokens[i + 1]
+        for i in range(len(chars) - 1):
+            bigram = chars[i] + chars[i + 1]
             if bigram in term_to_idx:
                 term_ids.append(term_to_idx[bigram])
-
-        if qid == "001":
-            print(term_ids)
             
         query_term_ids[qid] = term_ids
 
     return query_term_ids
 
 
-def compute_bm25(query, doc_term_freq, idf, doc_lens, k1=1.2, b=0.75, top_k=100):
+def compute_bm25(query, posting_lists, idf, doc_lens, k1=1.2, b=0.75, top_k=100):
     print("start compute BM25....")
     avgdl = np.mean(doc_lens)
     scores = {}
@@ -118,10 +117,10 @@ def compute_bm25(query, doc_term_freq, idf, doc_lens, k1=1.2, b=0.75, top_k=100)
     for term_id in query:
         term_idf = idf[term_id]
         
-        for doc_id, term_freq_dict in enumerate(doc_term_freq):
-            if term_id not in term_freq_dict:
-                continue
-            freq = term_freq_dict[term_id]
+        if term_id not in posting_lists:
+            continue
+        
+        for doc_id, freq in posting_lists[term_id]:
             dl = doc_lens[doc_id]
             denom = freq + k1 * (1 - b + b * dl / avgdl)
             score = term_idf * (freq * (k1 + 1)) / denom

@@ -28,19 +28,22 @@ class VSM:
         self.saved_idf_vector = os.path.join(model_dir, "idf.npy")
         self.saved_doc_term_freq = os.path.join(model_dir, "doc_term_freq.pkl")
         self.saved_doc_lens = os.path.join(model_dir, "doc_lens.npy")
+        self.saved_posting_list = os.path.join(model_dir, "posting_list.pkl")
         
         
         if not os.path.exists(self.saved_file_list) or \
             not os.path.exists(self.saved_term_to_idx) or \
             not os.path.exists(self.saved_idf_vector) or \
             not os.path.exists(self.saved_doc_term_freq) or \
+            not os.path.exists(self.saved_posting_list) or \
             not os.path.exists(self.saved_doc_lens):
                 print("Generating files...")
                 self.doc_list, \
                 self.term_to_idx, \
                 self.idf, \
                 self.doc_term_freq, \
-                self.doc_lens = self._load_model()
+                self.doc_lens, \
+                self.posting_list = self._load_model()
                 print("Done!")
         else:
             print("Loading files....")
@@ -49,6 +52,7 @@ class VSM:
             self.idf = self._load_npy(self.saved_idf_vector)
             self.doc_term_freq = self._load_pickle(self.saved_doc_term_freq)
             self.doc_lens = self._load_npy(self.saved_doc_lens)
+            self.posting_list = self._load_pickle(self.saved_posting_list)
             print("Done!")
             
         self._initialized = True
@@ -115,9 +119,16 @@ class VSM:
 
             i += 1
             
+        posting_list = {}
+        for doc_id, term_freq in enumerate(doc_term_freq):
+            for tid, freq in term_freq.items():
+                posting_list.setdefault(tid, []).append((doc_id, freq))
+                
         with open(self.saved_term_to_idx, "wb") as f:
             pickle.dump(term_to_idx, f)
         np.save(self.saved_file_list, np.array(doc_list))
+        with open(self.saved_posting_list, "wb") as f:
+            pickle.dump(posting_list, f)
         
         """ Compute IDF vector """
         
@@ -142,7 +153,7 @@ class VSM:
         with open(self.saved_doc_term_freq, "wb") as f:
             pickle.dump(doc_term_freq, f)
         
-        return doc_list, term_to_idx, idf_vector, doc_term_freq, doc_lens
+        return doc_list, term_to_idx, idf_vector, doc_term_freq, doc_lens, posting_list
 
 if __name__ == "__main__":
     vsm = VSM("model")
