@@ -49,7 +49,7 @@ def apply_rocchio_feedback(term_ids, vsm, top_k=10, alpha=1.0, beta=0.75):
 
     # Step 6: 過濾成 term_ids（這裡你可以加門檻條件）
     final_term_ids = [tid for tid, weight in sorted(new_q_vec.items(), key=lambda x: -x[1]) if weight > 0]
-    MAX_TERMS = 200
+    MAX_TERMS = 50
     final_term_ids = final_term_ids[:MAX_TERMS]
     
     return final_term_ids
@@ -86,11 +86,19 @@ def preprocess_queries_with_unigram_bigram(query_path, term_to_idx):
 
     for topic in root.findall("topic"):
         qid = topic.find("number").text.strip()[-3:]
-        concept_text = topic.find("concepts").text.strip()
+        # concept_text = topic.find("concepts").text.strip()
+        # title_text = topic.find("title").text.strip()
+        # combined_text = concept_text + title_text
         
-        concept_text = re.sub(r"[^\u4e00-\u9fff]", "", concept_text)
+        concept_text = topic.find("concepts").text or ""
+        # title_text = topic.find("title").text or ""
+        # question_text = topic.find("question").text or ""
+        combined_text = concept_text
+        # combined_text = concept_text + " " + title_text + " " + question_text
+        
+        combined_text = re.sub(r"[^\u4e00-\u9fff]", "", combined_text)
 
-        chars = list(concept_text)
+        chars = list(combined_text)
         term_ids = []
 
         # 加入 unigram
@@ -110,7 +118,6 @@ def preprocess_queries_with_unigram_bigram(query_path, term_to_idx):
 
 
 def compute_bm25(query, posting_lists, idf, doc_lens, k1=1.2, b=0.75, top_k=100):
-    print("start compute BM25....")
     avgdl = np.mean(doc_lens)
     scores = {}
 
