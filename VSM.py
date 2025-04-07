@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import lil_matrix, csr_matrix, save_npz, load_npz
+from scipy.sparse import lil_matrix, load_npz
 import pickle
 import os
 
@@ -7,7 +7,7 @@ import os
 class VSM:
     _instance = None  # Singleton 實例
     
-    def __new__(cls, model_dir):
+    def __new__(cls, _):  # _ : store model-dir
         if cls._instance is None:
             cls._instance = super(VSM, cls).__new__(cls)
             cls._instance._initialized = False
@@ -83,7 +83,6 @@ class VSM:
         
         # File list
         with open(self.file_list, "r", encoding="utf-8") as f:
-            
             doc_list = [line.strip() for line in f.readlines()]
         
         # Vocab 
@@ -131,7 +130,6 @@ class VSM:
             pickle.dump(posting_list, f)
         
         """ Compute IDF vector """
-        
         doc_count = len(doc_term_freq)
         term_size = len(term_to_idx)
         self.doc_count = doc_count

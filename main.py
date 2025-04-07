@@ -3,7 +3,7 @@ import numpy as np
 import csv
 import re
 import xml.etree.ElementTree as ET
-from vsm_model import VSM
+from course.WM.PA1.VSM import VSM
 from collections import defaultdict
 import time
 
@@ -49,7 +49,7 @@ def apply_rocchio_feedback(term_ids, vsm, top_k=10, alpha=1.0, beta=0.75):
 
     # Step 6: 過濾成 term_ids（這裡你可以加門檻條件）
     final_term_ids = [tid for tid, weight in sorted(new_q_vec.items(), key=lambda x: -x[1]) if weight > 0]
-    MAX_TERMS = 50
+    MAX_TERMS = 100
     final_term_ids = final_term_ids[:MAX_TERMS]
     
     return final_term_ids
