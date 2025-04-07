@@ -3,7 +3,7 @@ import numpy as np
 import csv
 import re
 import xml.etree.ElementTree as ET
-from course.WM.PA1.VSM import VSM
+from VSM import VSM
 from collections import defaultdict
 import time
 
